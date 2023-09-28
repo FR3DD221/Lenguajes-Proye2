@@ -123,6 +123,7 @@ cargarYmostrarParqueos = do
         parqueosNew <- leerArchivo "parqueos.txt"
         let cadenaNueva  = toStringParks parqueosNew
         putStrLn((cadenaNueva !! 0))
+
 --Lista de parqueos -> id del mas cercano -> posicionActual -> Distancia menor Asociada al Id -> cordenadax -> cordenaday
 parqueoCercano :: [String] -> Int -> Int -> Double -> Int -> Int -> Int
 parqueoCercano lista id pos distancia x y =
