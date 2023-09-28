@@ -1,0 +1,9 @@
+1,parqueoSj,Desamparados centro,SJ,154,70
+2,santaParks,Al frente del parquesito,LI,20,45
+3,puertoParks,En el paseo de los turistas,PU,207,110
+4,tamarindoParks,Bagaces centro,GU,512,458
+5,ligaParks,al frente del Morera,AL,215,256
+6,cristianParks,a la par del TEC,CA,195,115
+7,oxigenParks,al frente de Oxigeno,HE,89,96
+8,wyntaParks,entrando a Pueblo,LI,30,70
+9,freddParks,a la par de la basilica,CA,197,265
