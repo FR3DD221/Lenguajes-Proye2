@@ -170,6 +170,27 @@ bicletasAsociadas listaB id =
             bicletasAsociadas rest id
         else do
             bicletasAsociadas rest id
+            
+--modificarArchivo Lista a modificar -> codigo a modificar -> texto sustituir -> resultado
+modificarArchivo :: [String] -> String -> String -> String -> IO()
+modificarArchivo lista codigo texto res =
+    if null lista then
+        sobreEscribirEnArchivo "bicicletas.txt" res
+    else do
+        --extraemos la primera posicion.
+        let temp = split (head lista) ""
+        --sacamos el resto.
+        let rest = tail lista
+        --Id de la bicicleta.
+        let idBici = temp !! 0
+
+        let line = temp !! 0  ++ "," ++ temp !! 1  ++ "," ++ temp !! 2 ++ "\n"
+        let lineMod = temp !! 0 ++ "," ++ temp !! 1 ++ "," ++ texto ++ "\n"
+
+        if codigo == idBici then do
+            modificarArchivo rest codigo texto (res ++ lineMod)
+        else do
+            modificarArchivo rest codigo texto (res ++ line)
 
 main :: IO ()
 main = do

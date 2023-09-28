@@ -1,0 +1,6 @@
+1,3,4,B0001,activo
+2,3,4,B0003,activo
+3,3,4,B0004,activo
+4,3,4,B0005,activo
+5,3,4,B0006,activo
+6,3,4,B0009,activo 
