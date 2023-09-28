@@ -45,7 +45,6 @@ getIndicesParqueos parqueos result = do
     else getIndicesParqueos (tail parqueos) (result ++ [(parqueo !! 0)])
 
 
-<<<<<<< HEAD
 esEntero str =
     case reads str :: [(Int, String)] of
         [(numero, "")] -> True  
@@ -124,7 +123,6 @@ cargarYmostrarParqueos = do
         parqueosNew <- leerArchivo "parqueos.txt"
         let cadenaNueva  = toStringParks parqueosNew
         putStrLn((cadenaNueva !! 0))
-=======
 --Lista de parqueos -> id del mas cercano -> posicionActual -> Distancia menor Asociada al Id -> cordenadax -> cordenaday
 parqueoCercano :: [String] -> Int -> Int -> Double -> Int -> Int -> Int
 parqueoCercano lista id pos distancia x y =
@@ -171,7 +169,6 @@ bicletasAsociadas listaB id =
             bicletasAsociadas rest id
         else do
             bicletasAsociadas rest id
->>>>>>> a22c1adc414294a7b3551a6eec967dc5ae0208a8
 
 main :: IO ()
 main = do
