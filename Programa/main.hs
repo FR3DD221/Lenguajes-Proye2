@@ -124,6 +124,65 @@ cargarYmostrarParqueos = do
         let cadenaNueva  = toStringParks parqueosNew
         putStrLn((cadenaNueva !! 0))
 
+removeChars :: Char -> String -> String
+removeChars simbolo cadena = filter (\c -> c /= simbolo) cadena
+
+validarUsuariosAux :: [String] -> IO Int
+validarUsuariosAux usuario = do
+    contenido <- leerArchivo "usuarios.txt"
+    cedulasActu <- getIndicesParqueos contenido []
+
+    if length primerElemento /= 9 then do
+        putStrLn "\nLa longitud de usuario no es 9"
+        return 0
+    else if (primerElemento !! 1) /= '-' || (primerElemento !! 5) /= '-' then do
+        putStrLn "\nEl primer elemento no cumple con el formato esperado"
+        return 0
+    else if length usuario /= 2 then do
+        putStrLn "\nEl usuario solo debe contener cedula y nombre"
+        return 0
+    else if not estaBien then do
+        putStrLn "\nLa cedula solo debe contener números"
+        return 0
+    else if notElem (head primerElemento) digitos then do
+        putStrLn "\nEl primer digito de la cedula debe estar en el rango de 1-7"
+        return 0
+    else if not (notElem (primerElemento) cedulasActu) then do
+        putStrLn "\nLa cedula de un usuario ya existe"
+        return 0
+    else do
+        return 1
+    where
+        primerElemento = (usuario !! 0)
+        digitos = ['1', '2', '3', '4', '5', '6', '7']
+        cadena = removeChars '-' primerElemento
+        estaBien = esEntero cadena
+
+
+validarUsuarios :: [String] -> IO Int
+validarUsuarios [] = return 1
+validarUsuarios (primerUsuario:restoUsuarios) = do
+    let usuario = split primerUsuario ""
+    estaBien <- validarUsuariosAux usuario
+    if estaBien == 1
+        then validarUsuarios restoUsuarios
+        else return 0
+
+
+cargarUsuarios = do
+    putStrLn("\nIngrese su archivo de usuarios: ")
+    input <- getLine
+    usuarios <- leerArchivo input
+    estaBien <- validarUsuarios usuarios
+
+    if not (null usuarios) && estaBien == 1 then do
+        let cadena = pegarElementos usuarios
+        añadirEnArchivo "usuarios.txt" (cadena !! 0)
+        putStrLn("\nUsuarios añadidos con exito!!")
+    else 
+        putStrLn("\nUsuarios no añadidos, intentalo de nuevo")
+
+
 --Lista de parqueos -> id del mas cercano -> posicionActual -> Distancia menor Asociada al Id -> cordenadax -> cordenaday
 parqueoCercano :: [String] -> Int -> Int -> Double -> Int -> Int -> Int
 parqueoCercano lista id pos distancia x y =
@@ -173,6 +232,7 @@ bicletasAsociadas listaB id =
 
 main :: IO ()
 main = do
-    cargarYmostrarParqueos
+    --cargarYmostrarParqueos
+    cargarUsuarios
 
-    putStrLn ("")
+    putStrLn ("show x")
