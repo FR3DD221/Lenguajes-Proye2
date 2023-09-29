@@ -6,4 +6,3 @@
 6,cristianParks,a la par del TEC,CA,195,115
 7,oxigenParks,al frente de Oxigeno,HE,89,96
 8,wyntaParks,entrando a Pueblo,LI,30,70
-9,freddParks,a la par de la basilica,CA,197,265
