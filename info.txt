@@ -1,0 +1,22 @@
+a. Nombre del curso
+-Lenguajes de programación
+
+b. Número de semestre y año lectivo
+-II semestre, 2023
+
+c. Nombre de los Estudiantes
+-Randall Corella Castillo
+-Fredd Badilla Víquez
+
+d. Número de carnet de los estudiantes
+-2020087763
+-2022012800
+
+e. Número de proyecto programado
+Proyecto programado #2
+
+f. Fecha de entrega
+04/10/2023
+
+g. Estatus de la entrega (debe ser CONGRUENTE con la solución entregada): 
+[Deplorable|Regular|Buena|MuyBuena|Excelente|Superior]
