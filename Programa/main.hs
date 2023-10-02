@@ -1,5 +1,12 @@
 import System.IO
 import System.Directory (doesPathExist)
+import Control.Exception
+import System.Directory
+import Control.Concurrent
+import Text.Read (readMaybe)
+import Data.IORef
+import Data.Char (toUpper)
+
 
 --C://Users//fredd//OneDrive//Documentos//TEC/LENGUAJES//PP2_Fredd_Randall//Programa//
 
@@ -96,7 +103,7 @@ cargarParqueosAux parqueos = do
 toStringParks [] = return ""
 toStringParks parqueos = do
     let parqueo = split (head parqueos) ""
-    let texto = "\nID: " ++ (parqueo !! 0) ++ " Nombre: " ++ (parqueo !! 1) ++ " Ubicacion: " ++ (parqueo !! 2) ++ " Provincia: " ++ (parqueo !! 3) ++ " Coordenadas: X->" ++ (parqueo !! 4) ++ " Y->" ++ (parqueo !! 5)
+    let texto = "\nID: " ++ (parqueo !! 0) ++ "| Nombre: " ++ (parqueo !! 1) ++ "| Ubicacion: " ++ (parqueo !! 2) ++ "| Provincia: " ++ (parqueo !! 3) ++ "| Coordenadas: X->" ++ (parqueo !! 4) ++ " Y->" ++ (parqueo !! 5)
 
     resto <- toStringParks (tail parqueos)
     return (texto ++ resto)
@@ -105,8 +112,15 @@ pegarElementos [] = return ""
 pegarElementos parqueos = do
     let parqueo = (head parqueos)
 
-    resto <- toStringParks (tail parqueos)
-    return ("\n" ++ parqueo ++ resto)
+    resto <- pegarElementos (tail parqueos)
+    return (parqueo ++ "\n" ++ resto)
+
+pegarBicis [] = return ""
+pegarBicis parqueos = do
+    let parqueo = (head parqueos)
+
+    resto <- pegarElementos (tail parqueos)
+    return (parqueo ++ ",1\n" ++ resto)
 
 cargarYmostrarParqueos = do
     parqueos <- cargarParqueos
@@ -144,7 +158,7 @@ validarUsuariosAux usuario = do
     else if not estaBien then do
         putStrLn "\nLa cedula solo debe contener números"
         return 0
-    else if notElem (head primerElemento) digitos then do
+    else if (notElem (head primerElemento) digitos) then do
         putStrLn "\nEl primer digito de la cedula debe estar en el rango de 1-7"
         return 0
     else if not (notElem (primerElemento) cedulasActu) then do
@@ -181,6 +195,130 @@ cargarUsuarios = do
         putStrLn("\nUsuarios añadidos con exito!!")
     else 
         putStrLn("\nUsuarios no añadidos, intentalo de nuevo")
+
+validarBicisAux bici idsNuevos = do
+    bicisActuales <- leerArchivo "bicicletas.txt"
+    parqueosActuales <- leerArchivo "parqueos.txt"
+    idsBicisAct <- getIndicesParqueos bicisActuales []
+    idsParqueosAct <- getIndicesParqueos parqueosActuales []
+
+    if length bici /= 2 then do
+        putStrLn("\nERROR -> Una bici no contiene la cantidad parametros adecuada")
+        return 0
+    else if notElem (head bici) idsBicisAct then do
+        putStrLn("\nERROR -> Una bici posee un ID inexistente")
+        return 0
+    else if notElem (bici !! 1) idsParqueosAct then do
+        putStrLn("\nERROR -> Una bici posee un parqueo inexistente")
+        return 0
+    else if length (filter (== (head bici)) idsNuevos) > 1 then do 
+        putStrLn("\nERROR -> Hay un ID repetido en esta lista")
+        return 0
+    else
+        return 1
+
+
+validarBicis [] idsNuevos = return 1
+validarBicis bicis idsNuevos = do
+    let bici = split (head bicis) ""
+    estaBien <- validarBicisAux (bici) idsNuevos
+
+    if estaBien == 1 then
+        validarBicis (tail bicis) idsNuevos
+    else 
+        return 0
+
+
+actualizarInfoBicis dato bicisActuales = do
+    let biciVieja = split (head bicisActuales) ""  
+    let parqueoBV = (biciVieja !! 2)
+    let parqueoBN = (dato !! 1)
+    let idBV = (head biciVieja)
+    let idBN = (head dato)
+    let biciNueva = [idBV ++ "," ++ (biciVieja !! 1) ++ "," ++ parqueoBN]
+
+    if idBN == idBV && parqueoBV /= "transito" then do
+        return (biciNueva ++ (tail bicisActuales))
+    else if idBN == idBV && parqueoBV == "transito" then do
+        putStrLn ("\nLa bici con el identificador " ++ idBV ++ " se encuentra en tránsito")
+        return (bicisActuales)
+    else do
+        restante <- actualizarInfoBicis dato (tail bicisActuales)
+        return ([(head bicisActuales)] ++ restante)
+
+actualizarBicisAux [] bicisActu = return bicisActu 
+actualizarBicisAux datosNuevos bicisActuales = do 
+    let dato = split (head datosNuevos) ""
+    bicisActu <- actualizarInfoBicis dato bicisActuales
+    actualizarBicisAux (tail datosNuevos) bicisActu
+
+
+actualizarBicis = do
+    putStrLn("\nIngrese la ruta de su archivo con los nuevos datos:")
+    ruta <- getLine
+    contenido <- leerArchivo ruta
+    contenido2 <- leerArchivo "bicicletas.txt"  
+    idsNuevos <- getIndicesParqueos contenido []
+    bicisValidadas <- validarBicis contenido idsNuevos
+
+    if bicisValidadas == 1 then do
+        nuevasBicis <- actualizarBicisAux contenido contenido2
+        let cadena = pegarElementos nuevasBicis
+        sobreEscribirEnArchivo "bicicletasAux.txt" (cadena !! 0)
+        putStrLn("\nBicis actualizadas con exito")
+        return 1
+    else do
+        putStrLn("\nDebido a incosistencias con los datos nuevos, no se actualizo ninguna bici")
+        return 0
+
+
+validarBicisNuevasAux bici = do
+    bicisActuales <- leerArchivo "bicicletas.txt"
+    idsBicisAct <- getIndicesParqueos bicisActuales []
+
+    if length bici /= 2 then do
+        putStrLn("\nERROR -> Una bici no contiene la cantidad parametros adecuada")
+        return 0
+    else if elem (head bici) idsBicisAct then do
+        putStrLn("\nERROR -> Una bici posee un ID existen")
+        return 0
+    else if head (head bici) /= 'B' then do 
+        putStrLn("\nERROR -> El primer elemento de un ID de una bici debe ser una ->B<-")
+        return 0
+    else if not (esEntero (tail (head bici))) then do 
+        putStrLn("\nERROR -> Despues de la B, deben ir numeros enteros")
+        return 0
+    else if (bici !! 1) /= "TR" && (bici !! 1) /= "AG" && (bici !! 1) /= "AE" then do 
+        putStrLn("\nERROR -> Una bici posee un tipo incorrecto de gasolina")
+        return 0
+    else
+        return 1
+
+
+validarBicisNuevas [] = return 1
+validarBicisNuevas bicis = do
+    let bici = split (head bicis) ""
+    estaBien <- validarBicisNuevasAux (bici) 
+
+    if estaBien == 1 then
+        validarBicisNuevas (tail bicis)
+    else 
+        return 0
+
+
+cargarBicicletas = do
+    putStrLn("\nIngrese la ruta de su archivo con las bicicletas:")
+    ruta <- getLine
+    contenido <- leerArchivo ruta
+    estaBien <- validarBicisNuevas contenido
+
+    if estaBien == 1 then do
+        let cadena = pegarBicis contenido
+        añadirEnArchivo "bicicletas.txt" (cadena !! 0)
+        putStrLn("\nBicis añadidas con exito!!")
+    else 
+        putStrLn("\nDebido a incosistencias con los datos nuevos, no se guardo ninguna bici")
+
 
 
 --Lista de parqueos -> id del mas cercano -> posicionActual -> Distancia menor Asociada al Id -> cordenadax -> cordenaday
@@ -229,7 +367,8 @@ bicletasAsociadas listaB id =
             bicletasAsociadas rest id
         else do
             bicletasAsociadas rest id
-            
+
+
 --modificarArchivo Lista a modificar -> codigo a modificar -> texto sustituir -> resultado
 modificarArchivo :: [String] -> String -> String -> String -> IO()
 modificarArchivo lista codigo texto res =
@@ -251,9 +390,109 @@ modificarArchivo lista codigo texto res =
         else do
             modificarArchivo rest codigo texto (res ++ line)
 
+
+bicisEnTr [] = return ""
+bicisEnTr bicis = do
+    let bici = split (head bicis) ""
+    let texto = "\nID: " ++ (bici !! 0) ++ "| Tipo: " ++ (bici !! 1) ++ "| Ubicacion: " ++ (bici !! 2)
+
+    if (bici !! 2) /= "transito" then
+        putStrLn(texto)
+    else 
+        putStr("")
+
+    resto <- bicisEnTr (tail bicis)
+    return (resto)
+
+bicisEnTrV2 [] = return ""
+bicisEnTrV2 bicis = do
+    let bici = split (head bicis) ""
+    let texto = "\nID: " ++ (bici !! 0) ++ "| Tipo: " ++ (bici !! 1) ++ "| Ubicacion: " ++ (bici !! 2)
+
+    if (bici !! 2) == "transito" then
+        putStrLn(texto)
+    else 
+        putStr("")
+
+    resto <- bicisEnTrV2 (tail bicis)
+    return (resto)
+
+mostrarBicis = do
+    putStrLn("\nIngresa un ID de parqueo, # o la palabra ->transito<-, segun lo que quieras ver")
+    input <- getLine
+    contenido <- leerArchivo "parqueos.txt"
+    contenido2 <- leerArchivo "bicicletas.txt"
+    indices <- getIndicesParqueos contenido []
+    let cadenaEnMayusculas = map toUpper input
+
+    if input == "#" then do
+        putStrLn("\nEstas son las bicis que no estan en transito de manera global")
+        bicisEnTr contenido2
+        putStr("")
+    else if cadenaEnMayusculas == "TRANSITO" then do
+        putStrLn("\nEstas son las bicis que estan en transito de manera global")
+        bicisEnTrV2 contenido2
+        putStr("")
+    else if esEntero(input) && elem input indices then do 
+        let entero = read input :: Int
+        bicletasAsociadas contenido2 entero
+    else 
+        putStrLn("\nOpcion no valida, intentalo de nuevo")
+
+
+menuBicis :: IO ()
+menuBicis = do
+    putStrLn("\nMENU DE BICIS\n1. Cargar bicis\n2. Actualizar bicicletas\n3. Mostrar bicicletas\n4. Volver")
+    putStrLn("\nIngrese su opcion deseada:")
+    option <- getLine
+
+    if option == "1" then do
+        cargarBicicletas
+        menuBicis
+    else if option == "2" then do 
+        x <- actualizarBicis
+        if x == 1 then do
+            contenido <- leerArchivo "bicicletasAux.txt"
+            let cadena = pegarElementos contenido
+            sobreEscribirEnArchivo "bicicletas.txt" (cadena !! 0)
+            menuBicis
+        else do 
+            menuBicis
+    else if option == "3" then do
+        mostrarBicis
+        menuBicis
+    else if option == "4" then do 
+        menuOperativo
+    else do
+        menuBicis 
+        putStrLn("\nOpcion invalida, intentalo de nuevo")
+
+menuOperativo :: IO ()
+menuOperativo = do
+    putStrLn("\nMENU OPERATIVO\n1. Cargar y mostrar parqueos\n2. Mostrar y asignar bicicletas\n3. Cargar usuarios\n4. Estadisticas\n5. Volver")
+    putStrLn("\nIngrese su opcion deseada:")
+    option <- getLine
+
+    if option == "1" then do
+        cargarYmostrarParqueos 
+        menuOperativo
+    else if option == "2" then do 
+        menuBicis
+    else if option == "3" then do
+        cargarUsuarios
+        menuOperativo
+    else if option == "4" then do 
+        menuOperativo
+    else if option == "5" then do 
+        menuOperativo
+    else do
+        menuOperativo 
+        putStrLn("\nOpcion invalida, intentalo de nuevo")
+
+
+
 main :: IO ()
 main = do
-    --cargarYmostrarParqueos
-    cargarUsuarios
+    menuOperativo
 
     putStrLn ("show x")
