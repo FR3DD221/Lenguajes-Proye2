@@ -6,7 +6,8 @@ import Control.Concurrent
 import Text.Read (readMaybe)
 import Data.IORef
 import Data.Char (toUpper)
-
+import Control.Concurrent
+import System.IO.Unsafe (unsafePerformIO)
 
 --C://Users//fredd//OneDrive//Documentos//TEC/LENGUAJES//PP2_Fredd_Randall//Programa//
 
@@ -348,10 +349,10 @@ parqueoCercano lista id pos distancia x y =
             parqueoCercano rest id (pos + 1) distancia x y
 
 --Bicicletas asociadas -> id del parqueo. -> 
-bicletasAsociadas :: [String] -> Int -> IO()
-bicletasAsociadas listaB id =
+bicicletasAsociadas :: [String] -> Int -> IO()
+bicicletasAsociadas listaB id =
     if null listaB
-    then putStrLn ("Fin.")
+    then putStrLn ("")
     else do
         --extraemos la primera posicion.
         let temp = split (head listaB) ""
@@ -363,10 +364,30 @@ bicletasAsociadas listaB id =
         let parqueoStrId = show id
 
         if parqueoStr == parqueoStrId then do
-            putStrLn ("Bicicleta asociada al parqueo: " ++ show temp)
-            bicletasAsociadas rest id
+            putStrLn ("Codigo de la bicicleta: " ++ (temp!!0) ++ "  Tipo: " ++ (temp!!1) ++ " Id del parqueo actual " ++ (temp!!2))
+            bicicletasAsociadas rest id
         else do
-            bicletasAsociadas rest id
+            bicicletasAsociadas rest id
+
+--Bicicletas asociadas en forma de lista-> id del parqueo. -> 
+bicicletasAsociadasList :: [String] -> Int -> [String] -> [String]
+bicicletasAsociadasList listaB id res = do
+    if null listaB
+    then res
+    else do
+        --extraemos la primera posicion.
+        let temp = split (head listaB) ""
+        --sacamos el resto.
+        let rest = tail listaB
+        --parqueoAsociado
+        let parqueoStr = temp !! 2
+        --int->String
+        let parqueoStrId = show id
+
+        if parqueoStr == parqueoStrId then do
+            bicicletasAsociadasList rest id (res ++ temp) 
+        else do
+            bicicletasAsociadasList rest id res
 
 
 --modificarArchivo Lista a modificar -> codigo a modificar -> texto sustituir -> resultado
@@ -389,6 +410,399 @@ modificarArchivo lista codigo texto res =
             modificarArchivo rest codigo texto (res ++ lineMod)
         else do
             modificarArchivo rest codigo texto (res ++ line)
+
+
+--Se encarga de validar que un string sea un entero.
+validaEnteros :: String -> Int
+validaEnteros input =
+    case readMaybe input :: Maybe Int of
+        Just numero -> numero
+        Nothing     -> -1
+
+
+--ExisteCedula
+existeCedula :: [String] -> String -> Int
+existeCedula usuarios cedulaB =
+    if null usuarios then -1
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head usuarios) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail usuarios
+        -- Cédula del usuario actual.
+        let cedula = temp !! 0
+        if cedula == cedulaB then 1
+        else existeCedula rest cedulaB
+
+--ExisteParqueo
+existeParqueo :: [String] -> String -> Int
+existeParqueo parqueos id =
+    if null parqueos then -1
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head parqueos) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail parqueos
+        -- Cédula del usuario actual.
+        let idPos = temp !! 0
+        if idPos == id then 1
+        else existeParqueo rest id
+
+--ExisteBicicleta
+existeBicicleta :: [String] -> String -> Int
+existeBicicleta bicicletas codigo =
+    if null bicicletas then -1
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head bicicletas) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail bicicletas
+        -- Cédula del usuario actual.
+        let codigoPos = temp !! 0
+        if codigoPos == codigo then 1
+        else existeBicicleta rest codigo
+
+--ExisteAlquiler
+existeAlquiler :: [String] -> String -> Int
+existeAlquiler alquileres id =
+    if null alquileres then -1
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head alquileres) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail alquileres
+        -- Cédula del usuario actual.
+        let idTemp = temp !! 0
+        let activo = temp !! 4
+        if idTemp == id && activo == "Activo" then 1
+        else existeAlquiler rest id
+
+--
+menuConsultarBicicleta = do
+    parqueos <- leerArchivo "parqueos.txt"
+    bicicletas <- leerArchivo "bicicletas.txt"
+    --pedir las cordenadas.
+    putStrLn "Ingrese la cordenada x:"
+    cordx <- getLine
+    putStrLn "Ingrese la cordenada y:"
+    cordy <- getLine
+    --Convertir los valores a enteros.
+    let x = validaEnteros cordx
+    let y = validaEnteros cordy
+    if x == -1 || y == -1 then do
+        putStrLn "¡Error: Las cordenadas ingresadas deben ser enteros."
+    else do
+        --buscar con la formula al mas cercano.
+        let id = parqueoCercano parqueos 0 0 0 x y
+        let p1 = extraerParqueo parqueos (show id)
+        
+        putStrLn ("\nEl parqueo mas cercano es: " ++ (p1 !! 1))
+        putStrLn "                     "
+        --
+        putStrLn "======================bicicletas asociadas======================"
+        bicicletasAsociadas bicicletas id
+        putStrLn "======================bicicletas asociadas======================"
+
+
+validarCedula cedula = do 
+    bracket
+        (openFile "usuarios.txt" ReadMode) 
+        hClose 
+        (\handle -> do
+            contenido <- hGetContents handle
+            let lineas = lines contenido 
+            let cedulaValida = existeCedula lineas cedula
+            if cedulaValida == -1 then do
+                putStrLn "Error, la cedula no existe.\n"
+                return ""
+            else do
+                putStrLn ""
+                return "1"
+        )
+        
+validarParqueo parqueoId = do
+    bracket
+        (openFile "parqueos.txt" ReadMode) 
+        hClose 
+        (\handle -> do
+            contenido <- hGetContents handle
+            let lineas = lines contenido 
+            let parqueoValido = existeParqueo lineas parqueoId
+            if parqueoValido == -1 then do
+                putStrLn "Error, el parqueo no existe.\n"
+                return ""
+            else do
+                putStrLn ""
+                return "1"
+        )
+
+validarBicicleta parqueo = do 
+    bracket
+        (openFile "bicicletas.txt" ReadMode) -- Abre el archivo en modo lectura
+        hClose -- Cierra el archivo al final
+        (\handle -> do
+            contenido <- hGetContents handle
+            let lineas = lines contenido -- Convierte el contenido en una lista de líneas
+            let id = validaEnteros parqueo
+            if id == -1 then do 
+                putStrLn "El id del parqueo debe ser un numero\n"
+                return ""
+            else do
+                putStrLn "======================bicicletas asociadas======================"
+                putStrLn "============== En caso de no existir ingrese '-' ===============\n"
+                bicicletasAsociadas lineas id
+                putStrLn "======================bicicletas asociadas======================"
+
+                let asoc = bicicletasAsociadasList lineas id []
+                putStrLn "Ingrese el codigo de la bicicleta:"
+                codigo <- getLine
+
+                let esta = elem codigo asoc -- True
+
+                if esta then do
+                    if codigo /= "-" then do
+                        let bicicletaValida = existeBicicleta lineas codigo
+                        if bicicletaValida == -1 then do
+                            return ""
+                        else do
+                            return codigo
+                    else do
+                        putStrLn "\nNo se hayaron bicicletas disponibles para este parqueo, pruebe con otro."
+                        return ""
+                else do
+                    putStrLn "\nEl codigo ingresado no pertenece a este parqueo."
+                    return ""
+        )
+
+--
+validarAlquiler id = do
+    bracket
+        (openFile "alquileres.txt" ReadMode) 
+        hClose 
+        (\handle -> do
+            contenido <- hGetContents handle
+            let lineas = lines contenido 
+            let alquilerValido = existeAlquiler lineas id
+            if alquilerValido == -1 then do
+                putStrLn "Error, el alquiler no existe.\n"
+                return ""
+            else do
+                putStrLn ""
+                return "1"
+        )
+
+
+copiarArchivo name name2 = do
+    fromHandle <- getAndOpenFile name ReadMode
+    toHandle <- getAndOpenFile name2 WriteMode
+    contents <- hGetContents fromHandle
+    hPutStr toHandle contents
+    hClose toHandle
+    putStrLn "Done."
+
+getAndOpenFile :: String -> IOMode -> IO Handle
+getAndOpenFile name mode = do
+    openFile name mode
+  
+
+menuAlquiler = do
+    putStrLn "Ingrese la cedula:"
+    cedula <- getLine
+    validc <- validarCedula cedula
+
+    if validc /= "" then do
+        putStrLn "Ingrese el parqueo de inicio:"
+        parqueo1 <- getLine
+        validp1 <- validarParqueo parqueo1
+
+        putStrLn "Ingrese el parqueo de llegada:"
+        parqueo2 <- getLine
+        validp2 <- validarParqueo parqueo2
+
+        if validp1 /= "" && validp2 /= "" && parqueo1 /= parqueo2 then do
+            codigoBicicleta <- validarBicicleta parqueo1
+            ---------------------------------
+            let archivo = "alquileres.txt" 
+            resultado <- getFileSize archivo
+            let largo = resultado
+            -------------------------------
+            if codigoBicicleta /= "" then do
+                let cadena = "\n" ++ show largo ++ "," ++ parqueo1 ++ "," ++ parqueo2 ++ "," ++ codigoBicicleta ++ ",Activo," ++ cedula 
+                añadirEnArchivo "alquileres.txt" cadena
+                bicicletas<-leerArchivo "bicicletas.txt"
+                modificarArchivo bicicletas codigoBicicleta "transito" ""
+                putStrLn $ "Transaccion completada, Id del alquiler: " ++ show largo
+            else do
+                putStrLn "Codigo de bicicleta invalido."
+        else do
+            putStrLn "Error: ingrese parqueos validos y diferentes."
+    else 
+        putStrLn "Error: la cedula no existe."
+
+
+extraerAlquiler :: [String] -> String -> [String]
+extraerAlquiler alquileres id =
+    if null alquileres then []
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head alquileres) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail alquileres
+        let idTemp = temp !! 0
+        let activo = temp !! 4
+        if idTemp == id && activo == "Activo" then temp
+        else extraerAlquiler rest id
+
+extraerParqueo :: [String] -> String -> [String]
+extraerParqueo parqueos id =
+    if null parqueos then []
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head parqueos) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail parqueos
+        let idTemp = temp !! 0
+        if idTemp == id then temp
+        else extraerParqueo rest id
+
+extraerUsuario :: [String] -> String -> [String]
+extraerUsuario usuarios id =
+    if null usuarios then []
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head usuarios) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail usuarios
+        -- Cédula del usuario actual.
+        let idTemp = temp !! 0
+        if idTemp == id then temp
+        else extraerUsuario rest id
+
+extraerBicicleta :: [String] -> String -> [String]
+extraerBicicleta bicicletas codigo =
+    if null bicicletas then []
+    else do
+        -- Extraemos la primera posición.
+        let temp = split (head bicicletas) ""
+        -- Sacamos el resto de la lista.
+        let rest = tail bicicletas
+        -- Cédula del usuario actual.
+        let codigoTemp = temp !! 0
+        if codigoTemp == codigo then temp
+        else extraerBicicleta rest codigo
+
+--modificarArchivo Lista a modificar -> id -> texto sustituir -> resultado
+modificarArchivoAlq :: [String] -> String -> String -> String -> IO()
+modificarArchivoAlq lista id texto res =
+    if null lista then
+        sobreEscribirEnArchivo "alquileres.txt" res
+    else do
+        --extraemos la primera posicion.
+        let temp = split (head lista) ""
+        --sacamos el resto.
+        let rest = tail lista
+        --Id de la bicicleta.
+        let idAlq = temp !! 0
+        let line = temp !! 0  ++ "," ++ temp !! 1  ++ "," ++ temp !! 2 ++ "," ++ temp !! 3 ++ "," ++ temp !! 4 ++ "," ++ temp !! 5 ++"\n"
+        let lineMod = temp !! 0  ++ "," ++ temp !! 1  ++ "," ++ temp !! 2 ++ "," ++ temp !! 3 ++ "," ++ texto ++ "," ++ temp !! 5 ++"\n"
+
+        if id == idAlq then do
+            modificarArchivoAlq rest id texto (res ++ lineMod)
+        else do
+            modificarArchivoAlq rest id texto (res ++ line)
+
+
+calcularTarifa tipo = do
+    if tipo == "TR" then 35
+    else if tipo == "AE" then 50
+    else 75
+
+--MenuFacturar
+menuFacturar = do
+    putStrLn "Ingrese el ID del alquiler:"
+    idAlquiler <- getLine
+
+    validAlq <- validarAlquiler idAlquiler
+    --Validamos que exista
+    if validAlq /= "" then do
+        infoComer <- leerArchivo "infoComer.txt"
+        alquileres <- leerArchivo "alquileres.txt"
+        parqueos <- leerArchivo "parqueos.txt"
+        bicicletas <- leerArchivo "bicicletas.txt"
+        usuarios <- leerArchivo "usuarios.txt"
+
+        let datos = extraerAlquiler alquileres idAlquiler
+        let codigoBici = datos !! 3
+        let idParqueoInit = datos !! 1
+        let idParqueoEnd = datos !! 2
+        let usuario = datos !! 5
+
+        let p1 = extraerParqueo  parqueos idParqueoInit
+        let p2 = extraerParqueo  parqueos idParqueoEnd 
+        let user = extraerUsuario usuarios usuario
+        let bicicleta = extraerBicicleta bicicletas codigoBici
+
+        let initx = read (p1 !! 4) :: Int
+        let inity = read (p1 !! 5) :: Int
+        let endx = read (p2 !! 4) :: Int
+        let endy = read (p2 !! 5) :: Int
+
+        --Calcular la distancia.
+        let distancia = sqrt (fromIntegral ((initx - endx) ^ 2 + (inity - endy) ^ 2))
+        let tarifa = calcularTarifa (bicicleta !! 1)
+
+
+        let resInfo = split (infoComer !! 0) ""
+
+        let infoComercial = "Nombre de la empresa: " ++ (resInfo !! 0) ++ "  Pagina: " ++ (resInfo !! 1) ++ "  Correo: " ++ (resInfo !! 2) 
+        let usuario = "Nombre del usuario: " ++ (user !! 1)
+        let parqueoName1 = "Parqueo de salida: " ++ (p1 !! 1)
+        let parqueoName2 = "Parqueo de salida: " ++ (p2 !! 1)
+        let kilometros = "kilometros: " ++ show distancia
+        let precio = "Total en colones: " ++ show (distancia * tarifa)
+
+        putStrLn infoComercial
+        putStrLn usuario
+        putStrLn parqueoName1
+        putStrLn parqueoName2
+        putStrLn kilometros
+        putStrLn precio
+
+        let final = "\n"++ (datos!!0) ++ "," ++ show distancia ++ "," ++ show(distancia * tarifa) ++ "," ++ (p1 !!0) ++ "," ++ (p2 !!0) ++ "," ++ codigoBici ++ "," ++ (user!!0)
+
+        modificarArchivoAlq alquileres idAlquiler "Facturado" ""
+        modificarArchivo bicicletas codigoBici idParqueoInit ""
+
+        añadirEnArchivo "facturas.txt" final
+    else do
+        putStrLn "No existe o ya esta desactivado"
+
+
+menuGeneral :: IO ()
+menuGeneral = do
+    putStrLn "\nOpciones operativas:"
+    putStrLn "Selecciona una opción:"
+    putStrLn "1. Consultar"
+    putStrLn "2. alquilar"
+    putStrLn "3. facturar"
+    putStrLn "4. Volver"
+
+    opcion <- getLine
+
+    case opcion of
+        "1" -> do
+            menuConsultarBicicleta
+            menuGeneral
+        "2" -> do
+            menuAlquiler
+            menuGeneral
+        "3" -> do
+                menuFacturar
+                menuGeneral
+            -- Agrega aquí la lógica para la Opción 2.
+        "4" -> putStrLn "Menu General"
+        _   -> do
+            putStrLn "Opción no válida. Por favor, selecciona una opción válida."
 
 
 bicisEnTr [] = return ""
@@ -435,7 +849,7 @@ mostrarBicis = do
         putStr("")
     else if esEntero(input) && elem input indices then do 
         let entero = read input :: Int
-        bicletasAsociadas contenido2 entero
+        bicicletasAsociadas contenido2 entero
     else 
         putStrLn("\nOpcion no valida, intentalo de nuevo")
 
@@ -484,15 +898,33 @@ menuOperativo = do
     else if option == "4" then do 
         menuOperativo
     else if option == "5" then do 
+        putStrLn "Adios"
+    else do 
         menuOperativo
-    else do
-        menuOperativo 
         putStrLn("\nOpcion invalida, intentalo de nuevo")
-
-
 
 main :: IO ()
 main = do
-    menuOperativo
+    menu
 
-    putStrLn ("show x")
+menu :: IO ()
+menu = do
+    putStrLn "Bienvenido al Menú"
+    putStrLn "Selecciona una opción:"
+    putStrLn "1. Opciones especificas"
+    putStrLn "2. Opciones generales"
+    putStrLn "3. Salir"
+
+    opcion <- getLine
+
+    case opcion of
+        "1" -> do
+            menuOperativo
+            menu
+        "2" -> do
+            menuGeneral
+            menu
+        "3" -> putStrLn "¡Adiós!"
+        _   -> do
+            putStrLn "Opción no válida. Por favor, selecciona una opción válida."
+            menu
