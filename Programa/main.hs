@@ -8,6 +8,10 @@ import Data.IORef
 import Data.Char (toUpper)
 import Control.Concurrent
 import System.IO.Unsafe (unsafePerformIO)
+import Data.List (sortOn)
+import Data.Function (on)
+import Control.DeepSeq
+import Data.List (sortBy)
 
 --C://Users//fredd//OneDrive//Documentos//TEC/LENGUAJES//PP2_Fredd_Randall//Programa//
 
@@ -394,7 +398,7 @@ bicicletasAsociadasList listaB id res = do
 modificarArchivo :: [String] -> String -> String -> String -> IO()
 modificarArchivo lista codigo texto res =
     if null lista then
-        sobreEscribirEnArchivo "bicicletas.txt" res
+        sobreEscribirEnArchivo "bicicletas.txt" (take (length res - 2) res)
     else do
         --extraemos la primera posicion.
         let temp = split (head lista) ""
@@ -695,7 +699,7 @@ extraerBicicleta bicicletas codigo =
 modificarArchivoAlq :: [String] -> String -> String -> String -> IO()
 modificarArchivoAlq lista id texto res =
     if null lista then
-        sobreEscribirEnArchivo "alquileres.txt" res
+        sobreEscribirEnArchivo "alquileres.txt" (take (length res - 2) res)
     else do
         --extraemos la primera posicion.
         let temp = split (head lista) ""
@@ -903,6 +907,189 @@ menuOperativo = do
         menuOperativo
         putStrLn("\nOpcion invalida, intentalo de nuevo")
 
+
+
+menuEstadisticas :: IO ()
+menuEstadisticas = do
+    putStrLn "\nEstadisticas:"
+    putStrLn "Selecciona una opción:"
+    putStrLn "1. Top 5 de bicicletas con más viajes, indicar bicicleta y cantidad de viajes."
+    putStrLn "2. Top 5 de parqueos con más viajes (salida + destino) indicar parqueo y cantidad de viajes"
+    putStrLn "3. Top 3 de usuarios con más kilómetros recorridos (según fórmula de distancia). Indicar usuario y cantidad."
+    putStrLn "4. Resumen: total de viajes, total de kilómetros y total facturado (facturas generadas)"
+    putStrLn "5. Volver"
+
+    opcion <- getLine
+
+    case opcion of
+        "1" -> do
+            topBicicletas
+            menuEstadisticas
+        "2" -> do
+            topParqueos
+            menuEstadisticas
+        "3" -> do
+            topUsuarios
+            menuEstadisticas
+            -- Agrega aquí la lógica para la Opción 2.
+        "4" -> putStrLn "Menu General"
+
+        "5" -> putStrLn "Adios."
+        _   -> do
+            putStrLn "Opción no válida. Por favor, selecciona una opción válida."
+            menuEstadisticas
+
+
+
+ordenar :: [(String, Int)] -> [(String, Int)]
+ordenar = sortOn snd
+
+ordenarF :: [(String, Float)] -> [(String, Float)]
+ordenarF = sortOn snd
+
+imprimirTuplaBicicletas :: (String, Int) -> IO ()
+imprimirTuplaBicicletas (codigo, cantidad) = putStrLn $ "El codigo de la bicicleta es: " ++ codigo ++ "  La cantidad de viajes: " ++ show cantidad
+
+imprimirTuplaParqueos :: (String, Int) -> IO ()
+imprimirTuplaParqueos (codigo, cantidad) = putStrLn $ "El id del parqueo es: " ++ codigo ++ "  La cantidad de viajes: " ++ show cantidad
+
+imprimirTuplaUsuarios :: (String, Float) -> IO ()
+imprimirTuplaUsuarios (codigo, cantidad) = putStrLn $ "Cedula del usuario: " ++ codigo ++ "  Kilometros recorridos: " ++ show cantidad
+
+
+topBicicletas = do
+    viajes <- leerArchivo "facturas.txt"
+    bicicletas <- leerArchivo "bicicletas.txt"
+
+    let first = bicicletas!!0
+    let splitLine = split first ""
+    let codigo =  splitLine !! 0
+
+
+    let listaTops = topBicicletasAux bicicletas viajes 0 0 [] codigo 0
+
+    let listaOrd = ordenar listaTops
+
+    let listReverse = reverse listaOrd
+    --Nota Debo ordenarlos.
+    let lista = take 5 listReverse
+
+    mapM_ imprimirTuplaBicicletas lista
+
+    
+
+topBicicletasAux :: [String] -> [String] -> Int -> Int -> [(String, Int)] -> String -> Int -> [(String, Int)]
+topBicicletasAux bicicletas viajes posBici posViaje res code cant = do
+    --
+    let largobicis = length bicicletas
+    let largoViajes = length viajes
+
+    let lineAB = (bicicletas !! (posBici + 1))
+    let listLine = split lineAB ""
+    let nextCode = listLine !! 0 
+
+    let lineAV = viajes !! posViaje
+    let listV = split lineAV ""
+    let temp = listV !! 5
+
+    let sub = [(code, cant)]
+    if largobicis == posBici then res
+    else 
+        if largoViajes == posViaje then topBicicletasAux bicicletas viajes (posBici + 1) 0 (res ++ sub) nextCode (cant - cant)
+        else 
+            if temp == code then topBicicletasAux bicicletas viajes posBici (posViaje + 1) res code (cant + 1)
+            else topBicicletasAux bicicletas viajes posBici (posViaje + 1) res code cant       
+
+
+topParqueos = do
+    viajes <- leerArchivo "facturas.txt"
+    parqueos <- leerArchivo "parqueos.txt"
+
+    let first = parqueos!!0
+    let splitLine = split first ""
+    let id =  splitLine !! 0
+
+    let listaTops = topParqueosAux parqueos viajes 0 0 [] id 0
+
+    let listaOrd = ordenar listaTops
+
+    let listReverse = reverse listaOrd
+    --Nota Debo ordenarlos.
+    let lista = take 5 listReverse
+
+    mapM_ imprimirTuplaParqueos lista
+
+    
+
+topParqueosAux :: [String] -> [String] -> Int -> Int -> [(String, Int)] -> String -> Int -> [(String, Int)]
+topParqueosAux parqueos viajes posPar posViaje res code cant = do
+    --
+    let largobicis = length parqueos
+    let largoViajes = length viajes
+
+    let lineAB = (parqueos !! (posPar + 1))
+    let listLine = split lineAB ""
+    let nextCode = listLine !! 0 
+
+    let lineAV = viajes !! posViaje
+    let listV = split lineAV ""
+    let temp = listV !! 4
+    let temp1 = listV !! 3
+
+    let sub = [(code, cant)]
+    if largobicis == posPar then res
+    else 
+        if largoViajes == posViaje then topParqueosAux parqueos viajes (posPar + 1) 0 (res ++ sub) nextCode (cant - cant)
+        else 
+            if temp == code || temp1 == code then topParqueosAux parqueos viajes posPar (posViaje + 1) res code (cant + 1)
+            else topParqueosAux parqueos viajes posPar (posViaje + 1) res code cant       
+
+
+topUsuarios = do
+    viajes <- leerArchivo "facturas.txt"
+    usuarios <- leerArchivo "usuarios.txt"
+
+    let first = usuarios!!0
+    let splitLine = split first ""
+    let cedula =  splitLine !! 0
+
+    let listaTops = topUsuariosAux usuarios viajes 0 0 [] cedula 0.0
+
+    let listaOrd = ordenarF listaTops
+
+    let listReverse = reverse listaOrd
+    --Nota Debo ordenarlos.
+    let lista = take 3 listReverse
+
+    mapM_ imprimirTuplaUsuarios lista
+
+    
+
+topUsuariosAux :: [String] -> [String] -> Int -> Int -> [(String, Float)] -> String -> Float -> [(String, Float)]
+topUsuariosAux usuarios viajes posPar posViaje res cedula cant = do
+    --
+    let largobicis = length usuarios
+    let largoViajes = length viajes
+
+    let lineAB = (usuarios !! (posPar + 1))
+    let listLine = split lineAB ""
+    let nextCode = listLine !! 0 
+
+    let lineAV = viajes !! posViaje
+    let listV = split lineAV ""
+    let temp = listV !! 6
+    let temp1 = listV !! 1
+
+    let monto = read temp1 :: Float
+
+    let sub = [(cedula, cant)]
+    if largobicis == posPar then res
+    else 
+        if largoViajes == posViaje then topUsuariosAux usuarios viajes (posPar + 1) 0 (res ++ sub) nextCode (0)
+        else
+            if temp == cedula then topUsuariosAux usuarios viajes posPar (posViaje + 1) res cedula (cant + monto)
+            else topUsuariosAux usuarios viajes posPar (posViaje + 1) res cedula cant       
+
 main :: IO ()
 main = do
     menu
@@ -913,7 +1100,8 @@ menu = do
     putStrLn "Selecciona una opción:"
     putStrLn "1. Opciones especificas"
     putStrLn "2. Opciones generales"
-    putStrLn "3. Salir"
+    putStrLn "3. Estadisticas"
+    putStrLn "4. Salir"
 
     opcion <- getLine
 
@@ -924,7 +1112,14 @@ menu = do
         "2" -> do
             menuGeneral
             menu
-        "3" -> putStrLn "¡Adiós!"
+        "3" -> do
+            menuEstadisticas
+            menu
+
+        "4" -> putStrLn "¡Adiós!"
         _   -> do
             putStrLn "Opción no válida. Por favor, selecciona una opción válida."
             menu
+
+
+

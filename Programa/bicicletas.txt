@@ -1,9 +1,8 @@
-B001,TR,3
 B002,TR,transito
-B003,TR,3
+B003,TR,transito
 B004,TR,3
 B005,AE,3
-B006,TR,3
+B006,TR,transito
 B007,TR,3
 B008,TR,transito
 B009,TR,3
