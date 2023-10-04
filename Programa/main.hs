@@ -901,7 +901,7 @@ menuBicis = do
 
 menuOperativo :: IO ()
 menuOperativo = do
-    putStrLn("\nMENU OPERATIVO\n1. Cargar y mostrar parqueos\n2. Mostrar y asignar bicicletas\n3. Cargar usuarios\n4. Estadisticas\n5. Volver")
+    putStrLn("\nMENU OPERATIVO\n1. Cargar y mostrar parqueos\n2. Mostrar y asignar bicicletas\n3. Cargar usuarios\n4. Volver")
     putStrLn("\nIngrese su opcion deseada:")
     option <- getLine
 
@@ -914,8 +914,6 @@ menuOperativo = do
         cargarUsuarios
         menuOperativo
     else if option == "4" then do 
-        menuOperativo
-    else if option == "5" then do 
         putStrLn "Adios"
     else do 
         menuOperativo
