@@ -12,3 +12,5 @@ B012,TR,transito
 B013,TR,transito
 B014,TR,8
 B015,TR,8
+B044,TR,1
+B045,TR,1
