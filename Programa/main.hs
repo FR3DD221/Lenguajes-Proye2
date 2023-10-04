@@ -6,10 +6,6 @@ import Control.Concurrent
 import Text.Read (readMaybe)
 import Data.IORef
 import Data.Char (toUpper)
-<<<<<<< HEAD
-
---C:/Users/fredd/OneDrive/Escritorio/test.txt
-=======
 import Control.Concurrent
 import System.IO.Unsafe (unsafePerformIO)
 import Data.List (sortOn)
@@ -17,7 +13,6 @@ import Data.Function (on)
 import Control.DeepSeq
 import Data.List (sortBy)
 
->>>>>>> f9a9b2829cca004b0f259574773db8ba2f6f64d3
 --C://Users//fredd//OneDrive//Documentos//TEC/LENGUAJES//PP2_Fredd_Randall//Programa//
 
 rutaExiste ruta = doesPathExist ruta
