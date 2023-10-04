@@ -7,7 +7,7 @@ import Text.Read (readMaybe)
 import Data.IORef
 import Data.Char (toUpper)
 
-
+--C:/Users/fredd/OneDrive/Escritorio/test.txt
 --C://Users//fredd//OneDrive//Documentos//TEC/LENGUAJES//PP2_Fredd_Randall//Programa//
 
 rutaExiste ruta = doesPathExist ruta
@@ -108,26 +108,40 @@ toStringParks parqueos = do
     resto <- toStringParks (tail parqueos)
     return (texto ++ resto)
 
-pegarElementos [] = return ""
-pegarElementos parqueos = do
+pegarElementos [] count = return ""
+pegarElementos parqueos count = do
     let parqueo = (head parqueos)
 
-    resto <- pegarElementos (tail parqueos)
-    return (parqueo ++ "\n" ++ resto)
+    if count == 0 then do
+        resto <- pegarElementos (tail parqueos) (count + 1)
+        return ("\n" ++ parqueo ++ "\n" ++ resto)
+    else if (tail parqueos) /= [] then do
+        resto <- pegarElementos (tail parqueos) (count + 1)
+        return (parqueo ++ "\n" ++ resto)
+    else do
+        resto <- pegarElementos (tail parqueos) (count + 1)
+        return (parqueo ++ resto)
 
-pegarBicis [] = return ""
-pegarBicis parqueos = do
+pegarBicis [] count = return ""
+pegarBicis parqueos count = do
     let parqueo = (head parqueos)
 
-    resto <- pegarElementos (tail parqueos)
-    return (parqueo ++ ",1\n" ++ resto)
+    if count == 0 then do
+        resto <- pegarBicis (tail parqueos) (count + 1)
+        return ("\n" ++ parqueo ++ ",1" ++ "\n" ++ resto)
+    else if not (null (tail parqueos)) then do
+        resto <- pegarBicis (tail parqueos) (count + 1)
+        return (parqueo ++ ",1" ++ "\n" ++ resto)
+    else do
+        resto <- pegarBicis (tail parqueos) (count + 1)
+        return (parqueo ++ ",1" ++ resto)
 
 cargarYmostrarParqueos = do
     parqueos <- cargarParqueos
     parqueosVali <- cargarParqueosAux parqueos 
 
     if not (null parqueos) && parqueosVali == 1 then do
-        let cadena = pegarElementos parqueos
+        let cadena = pegarElementos parqueos 0
         añadirEnArchivo "parqueos.txt" (cadena !! 0)
         parqueosNew <- leerArchivo "parqueos.txt"
         let cadenaNueva  = toStringParks parqueosNew
@@ -190,7 +204,7 @@ cargarUsuarios = do
     estaBien <- validarUsuarios usuarios
 
     if not (null usuarios) && estaBien == 1 then do
-        let cadena = pegarElementos usuarios
+        let cadena = pegarElementos usuarios 0
         añadirEnArchivo "usuarios.txt" (cadena !! 0)
         putStrLn("\nUsuarios añadidos con exito!!")
     else 
@@ -263,7 +277,7 @@ actualizarBicis = do
 
     if bicisValidadas == 1 then do
         nuevasBicis <- actualizarBicisAux contenido contenido2
-        let cadena = pegarElementos nuevasBicis
+        let cadena = pegarElementos nuevasBicis 0
         sobreEscribirEnArchivo "bicicletasAux.txt" (cadena !! 0)
         putStrLn("\nBicis actualizadas con exito")
         return 1
@@ -313,7 +327,7 @@ cargarBicicletas = do
     estaBien <- validarBicisNuevas contenido
 
     if estaBien == 1 then do
-        let cadena = pegarBicis contenido
+        let cadena = pegarBicis contenido 0
         añadirEnArchivo "bicicletas.txt" (cadena !! 0)
         putStrLn("\nBicis añadidas con exito!!")
     else 
@@ -453,7 +467,7 @@ menuBicis = do
         x <- actualizarBicis
         if x == 1 then do
             contenido <- leerArchivo "bicicletasAux.txt"
-            let cadena = pegarElementos contenido
+            let cadena = pegarElementos contenido 0
             sobreEscribirEnArchivo "bicicletas.txt" (cadena !! 0)
             menuBicis
         else do 
