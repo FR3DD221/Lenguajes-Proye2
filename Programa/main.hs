@@ -398,7 +398,7 @@ bicicletasAsociadasList listaB id res = do
 modificarArchivo :: [String] -> String -> String -> String -> IO()
 modificarArchivo lista codigo texto res =
     if null lista then
-        sobreEscribirEnArchivo "bicicletas.txt" (take (length res - 2) res)
+        sobreEscribirEnArchivo "bicicletas.txt" (take (length res - 1) res)
     else do
         --extraemos la primera posicion.
         let temp = split (head lista) ""
@@ -699,7 +699,7 @@ extraerBicicleta bicicletas codigo =
 modificarArchivoAlq :: [String] -> String -> String -> String -> IO()
 modificarArchivoAlq lista id texto res =
     if null lista then
-        sobreEscribirEnArchivo "alquileres.txt" (take (length res - 2) res)
+        sobreEscribirEnArchivo "alquileres.txt" (take (length res - 1) res)
     else do
         --extraemos la primera posicion.
         let temp = split (head lista) ""
