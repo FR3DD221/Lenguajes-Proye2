@@ -821,6 +821,7 @@ menuGeneral = do
         "4" -> putStrLn "Menu General"
         _   -> do
             putStrLn "Opción no válida. Por favor, selecciona una opción válida."
+            menuGeneral
 
 
 bicisEnTr [] = return ""
